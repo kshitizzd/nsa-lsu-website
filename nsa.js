@@ -251,6 +251,17 @@ var NSA_CSS = `
 .nsa-form-card .nsa-choice, .nsa-form-card .nsa-consent { position: relative; padding-left: 14px; }
 .nsa-form-card .nsa-consent { padding-left: 0; }
 .nsa-form-card .nsa-choice span, .nsa-form-card .nsa-consent span { padding: 0 !important; margin: 0 !important; }
+
+/* Events page: TigerLink's own upcoming-events block, given the NSA look */
+.nsa-events { font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; }
+.nsa-events .wrapper-events--featured { background: #FAF7F2; padding: 48px 0 64px; }
+.nsa-events .feature.feature-9 { background: #fff; border: 1px solid #E7E2EC; border-radius: 18px; overflow: hidden; padding: 0 0 22px; text-align: left; box-shadow: 0 2px 10px rgba(46, 18, 87, .06); }
+.nsa-events .feature.feature-9 img { border-radius: 0; width: 100%; height: 200px; object-fit: cover; }
+.nsa-events .section-cont__content-events_month_featured, .nsa-events .section-cont__content-events_day_featured { font-weight: 700; color: #C8102E; text-transform: uppercase; letter-spacing: .06em; font-size: .85em; }
+.nsa-events .section-cont__content-events_time_featured { color: #6B6478; font-size: .85em; }
+.nsa-events .feature.feature-9 span:first-of-type { margin-left: 20px; }
+.nsa-events .section-cont__content-events_name_featured { font-family: 'Fraunces', Georgia, serif; font-weight: 700; color: #221C2E; font-size: 1.3em; margin: 8px 20px 0; }
+.nsa-events .cg_dynamic_msg { font-family: 'Fraunces', Georgia, serif; color: #221C2E; }
 `;
 
 /* NSA @ LSU behaviour for TigerLink sections. Safe to include on a page more than once.
