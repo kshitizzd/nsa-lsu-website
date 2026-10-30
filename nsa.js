@@ -548,8 +548,9 @@ var NSA_API = "https://script.google.com/macros/s/AKfycbzANbV6hxqy5CSTPI3P6TtrhS
         form.appendChild(node);
       }
     });
-    // Spam trap: a field people never see or fill in.
-    form.appendChild(el('div', { cls: 'nsa-hp', 'aria-hidden': 'true' }, [el('input', { type: 'text', name: 'website', tabindex: '-1', autocomplete: 'off' })]));
+    // Spam trap: a field people never see or fill in. Its name means nothing to browser autofill
+    // (a field called "website" got filled in automatically and real people were blocked as spam).
+    form.appendChild(el('div', { cls: 'nsa-hp', 'aria-hidden': 'true' }, [el('input', { type: 'text', name: 'nsa_hp_x7', tabindex: '-1', autocomplete: 'off', 'data-lpignore': 'true', 'data-1p-ignore': 'true' })]));
     var btn = el('button', { type: 'submit', cls: 'nsa-btn', text: submitLabel });
     form.appendChild(btn);
     if (note) form.appendChild(el('p', { cls: 'nsa-hint', text: note }));
@@ -571,7 +572,7 @@ var NSA_API = "https://script.google.com/macros/s/AKfycbzANbV6hxqy5CSTPI3P6TtrhS
           data[f.name] = form.querySelector('[name="' + f.name + '"]').value.trim();
         }
       });
-      data.website = form.querySelector('input[name="website"]').value;
+      data.website = form.querySelector('input[name="nsa_hp_x7"]').value;
       var missing = fields.filter(function (f) { return f.required && !data[f.name]; })[0];
       if (missing) return error('Please fill in: ' + missing.label + '.');
       if (Date.now() - started - 2500 < 0) return error('Please take a moment to check your answers, then press the button again.');
