@@ -244,6 +244,13 @@ var NSA_CSS = `
 .nsa-empty p { margin: 0; color: var(--muted); }
 .nsa-post-head { margin-top: 36px; }
 @media (max-width: 640px) { .nsa-form-card .nsa-row, .nsa-choices-2 { grid-template-columns: 1fr; } .nsa-form-card { padding: 18px; } }
+
+/* TigerLink restyles checkboxes and radios (hides the real input), so force them visible and clickable */
+.nsa-form-card input[type=checkbox], .nsa-form-card input[type=radio] { -webkit-appearance: auto !important; appearance: auto !important; display: inline-block !important; position: static !important; opacity: 1 !important; visibility: visible !important; width: 18px !important; height: 18px !important; min-width: 18px; margin: 0 !important; padding: 0 !important; clip: auto !important; pointer-events: auto !important; z-index: 1; transform: none !important; border: initial; }
+.nsa-form-card .nsa-choice::before, .nsa-form-card .nsa-choice::after, .nsa-form-card .nsa-consent::before, .nsa-form-card .nsa-consent::after, .nsa-form-card .nsa-field::before, .nsa-form-card .nsa-field::after { content: none !important; display: none !important; }
+.nsa-form-card .nsa-choice, .nsa-form-card .nsa-consent { position: relative; padding-left: 14px; }
+.nsa-form-card .nsa-consent { padding-left: 0; }
+.nsa-form-card .nsa-choice span, .nsa-form-card .nsa-consent span { padding: 0 !important; margin: 0 !important; }
 `;
 
 /* NSA @ LSU behaviour for TigerLink sections. Safe to include on a page more than once.
