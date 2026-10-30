@@ -40,6 +40,10 @@ var NSA_CSS = `
 /* Hero */
 .nsa-hero { position: relative; min-height: clamp(440px, 70vh, 620px); display: flex; align-items: center; color: #fff; background: var(--purple-dark) center / cover no-repeat; overflow: hidden; }
 .nsa-hero::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: linear-gradient(100deg, rgba(46, 18, 87, .92) 0%, rgba(46, 18, 87, .7) 45%, rgba(46, 18, 87, .25) 100%); }
+.nsa-hero-slides, .nsa-slide { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
+.nsa-slide { background-size: cover; background-position: center; opacity: 0; transition: opacity 1.4s ease; transform: scale(1.04); }
+.nsa-slide.nsa-show { opacity: 1; animation: nsa-drift 9s ease-out forwards; }
+@keyframes nsa-drift { to { transform: scale(1); } }
 .nsa-hero .nsa-wrap { position: relative; z-index: 1; width: 100%; padding-top: 56px; padding-bottom: 56px; }
 .nsa-hero h1 { color: #fff; font-size: clamp(2.4em, 6vw, 3.8em); margin-bottom: .35em; }
 .nsa-hero p { color: rgba(255, 255, 255, .92); }
@@ -447,7 +451,24 @@ var NSA_CSS = `
     });
   }
 
-  function init() { header(); carousels(); accordions(); checklists(); albums(); officers(); }
+  // Home hero: fade through the banner photos every 6 seconds.
+  function heroSlides() {
+    each('.nsa-hero-slides', function (box) {
+      if (box.getAttribute('data-ready')) return;
+      box.setAttribute('data-ready', '1');
+      var slides = box.querySelectorAll('.nsa-slide');
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (slides.length - 1 === 0 || reduce) return;
+      var current = 0;
+      setInterval(function () {
+        slides[current].classList.remove('nsa-show');
+        current = (current + 1) % slides.length;
+        slides[current].classList.add('nsa-show');
+      }, 6000);
+    });
+  }
+
+  function init() { header(); heroSlides(); carousels(); accordions(); checklists(); albums(); officers(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
