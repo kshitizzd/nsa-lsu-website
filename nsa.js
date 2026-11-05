@@ -220,7 +220,6 @@ var NSA_CSS = `
 .nsa-choice { display: flex; align-items: center; gap: 10px; margin: 0; padding: 11px 14px; border: 1px solid #CFC8D8; border-radius: 10px; cursor: pointer; font: 400 .95em/1.3 var(--sans); }
 .nsa-choice input, .nsa-consent input { width: 18px; height: 18px; margin: 0; flex: none; accent-color: var(--purple); }
 .nsa-consent { display: flex; align-items: flex-start; gap: 10px; margin: 0 0 16px; font: 400 .92em/1.4 var(--sans); cursor: pointer; }
-.nsa-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 .nsa-notice { padding: 12px 14px; border-radius: 10px; margin: 0 0 16px; font: 500 .92em/1.4 var(--sans); }
 .nsa-notice-error { background: #FDECEE; color: #8A1020; }
 .nsa-result { max-width: 760px; padding: 26px; border-radius: 18px; background: var(--purple-soft); }
@@ -614,9 +613,9 @@ var NSA_API = "https://script.google.com/macros/s/AKfycbzANbV6hxqy5CSTPI3P6TtrhS
         form.appendChild(node);
       }
     });
-    // Spam trap: a field people never see or fill in. Its name means nothing to browser autofill
-    // (a field called "website" got filled in automatically and real people were blocked as spam).
-    form.appendChild(el('div', { cls: 'nsa-hp', 'aria-hidden': 'true' }, [el('input', { type: 'text', name: 'nsa_hp_x7', tabindex: '-1', autocomplete: 'off', 'data-lpignore': 'true', 'data-1p-ignore': 'true' })]));
+    // No hidden spam-trap field: browser autofill and password managers kept filling it in and real
+    // people were rejected as spam. The form only exists once this script runs, and the quick-submit
+    // check below stops anything that sends it instantly.
     var btn = el('button', { type: 'submit', cls: 'nsa-btn', text: submitLabel });
     form.appendChild(btn);
     if (note) form.appendChild(el('p', { cls: 'nsa-hint', text: note }));
@@ -638,7 +637,6 @@ var NSA_API = "https://script.google.com/macros/s/AKfycbzANbV6hxqy5CSTPI3P6TtrhS
           data[f.name] = form.querySelector('[name="' + f.name + '"]').value.trim();
         }
       });
-      data.website = form.querySelector('input[name="nsa_hp_x7"]').value;
       var missing = fields.filter(function (f) { return f.required && !data[f.name]; })[0];
       if (missing) return error('Please fill in: ' + missing.label + '.');
       if (Date.now() - started - 2500 < 0) return error('Please take a moment to check your answers, then press the button again.');
@@ -723,7 +721,7 @@ var NSA_API = "https://script.google.com/macros/s/AKfycbzANbV6hxqy5CSTPI3P6TtrhS
       { name: 'name', label: 'Your name', required: true, auto: 'name' },
       { name: 'email', label: 'Email you signed up with', type: 'email', required: true, auto: 'email' }
     ], 'Find me', function (d, done) {
-      api('unsub_find', { email: d.email, website: d.website }, function (res) {
+      api('unsub_find', { email: d.email }, function (res) {
         if (!res.ok) return done(res.error);
         if (!res.found) {
           return result(slot, 'info', "We couldn't find that email",
