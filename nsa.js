@@ -495,8 +495,28 @@ var NSA_API = "https://script.google.com/macros/s/AKfycbzANbV6hxqy5CSTPI3P6TtrhS
   }
 
   var seq = 0;
+  function query(action, params) {
+    var q = ['action=' + encodeURIComponent(action)];
+    Object.keys(params).forEach(function (k) { q.push(encodeURIComponent(k) + '=' + encodeURIComponent(params[k])); });
+    return API + (API.indexOf('?') === -1 ? '?' : String.fromCharCode(38)) + q.join(String.fromCharCode(38));
+  }
+
+  // Ask the form service without the visitor's Google cookies. With cookies, people signed in to
+  // Google (especially to several accounts) get a Google sign-in page back instead of the answer.
+  // Older browsers without fetch fall back to a script tag (JSONP).
   function api(action, params, done) {
     if (!API) { done({ ok: false, error: 'Online forms are not connected yet. Please email ' + NSA_EMAIL + '.' }); return; }
+    if (!window.fetch) return jsonp(action, params, done);
+    var finished = false;
+    var timer = setTimeout(function () { finish({ ok: false, error: 'The connection timed out. Please try again.' }); }, 25000);
+    function finish(res) { if (finished) return; finished = true; clearTimeout(timer); done(res); }
+    fetch(query(action, params), { credentials: 'omit', redirect: 'follow' })
+      .then(function (r) { return r.json(); })
+      .then(function (res) { finish(res || { ok: false, error: 'Something went wrong. Please try again.' }); })
+      .catch(function () { if (!finished) { finished = true; clearTimeout(timer); jsonp(action, params, done); } });
+  }
+
+  function jsonp(action, params, done) {
     var name = 'nsaCb' + (++seq) + Date.now();
     var s = document.createElement('script');
     var finished = false;
@@ -510,10 +530,8 @@ var NSA_API = "https://script.google.com/macros/s/AKfycbzANbV6hxqy5CSTPI3P6TtrhS
       done(res || { ok: false, error: 'Something went wrong. Please try again.' });
     }
     window[name] = finish;
-    var q = ['action=' + encodeURIComponent(action), 'callback=' + name];
-    Object.keys(params).forEach(function (k) { q.push(encodeURIComponent(k) + '=' + encodeURIComponent(params[k])); });
-    s.src = API + (API.indexOf('?') === -1 ? '?' : String.fromCharCode(38)) + q.join(String.fromCharCode(38));
-    s.onerror = function () { finish({ ok: false, error: 'Could not reach the NSA form service. Please try again.' }); };
+    s.src = query(action, params) + String.fromCharCode(38) + 'callback=' + name;
+    s.onerror = function () { finish({ ok: false, error: 'Could not reach the NSA form service. If you use an ad blocker, pause it for this page, or email ' + NSA_EMAIL + '.' }); };
     document.body.appendChild(s);
   }
 
