@@ -247,6 +247,22 @@ var NSA_CSS = `
 .nsa-empty { grid-column: 1 / -1; padding: 28px; text-align: center; background: var(--tint); border-radius: 18px; }
 .nsa-empty p { margin: 0; color: var(--muted); }
 .nsa-post-head { margin-top: 36px; }
+
+/* Loading states: a spinner box while the form service answers, placeholder cards while listings load,
+   and a small spinner inside a button while it is working */
+.nsa-loading { display: flex; align-items: center; justify-content: center; gap: 14px; max-width: 760px; min-height: 140px; margin: 0; padding: 28px; border: 1px dashed #D9D1E4; border-radius: 18px; background: var(--tint); color: var(--muted); font: 500 .95em/1.4 var(--sans); text-align: center; }
+.nsa-loading .nsa-spinner { width: 28px; height: 28px; flex: none; }
+.nsa-listings .nsa-loading { grid-column: 1 / -1; max-width: none; min-height: 0; padding: 14px 18px; justify-content: flex-start; text-align: left; }
+.nsa-skel-card { display: flex; flex-direction: column; min-height: 240px; padding: 20px; background: #fff; border: 1px solid var(--line); border-radius: 18px; }
+.nsa-skel { display: block; width: 100%; height: 12px; margin: 0 0 12px; border-radius: 999px; background: linear-gradient(90deg, var(--purple-soft) 30%, #FCFAFE 50%, var(--purple-soft) 70%); background-size: 300% 100%; animation: nsa-shimmer 1.5s ease-in-out infinite; }
+.nsa-skel-tag { width: 38%; height: 22px; }
+.nsa-skel-title { width: 64%; height: 20px; margin-bottom: 18px; }
+.nsa-skel-short { width: 48%; }
+.nsa-skel-btn { width: 42%; height: 34px; margin: auto 0 0 auto; }
+@keyframes nsa-shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+.nsa .nsa-btn.nsa-busy, .nsa .nsa-btn:disabled { opacity: .8; cursor: progress; }
+.nsa .nsa-btn.nsa-busy::before { content: ''; display: inline-block; width: 1em; height: 1em; margin: 0 .55em 0 0; vertical-align: -.15em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: nsa-spin .7s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .nsa-skel { animation: none; } .nsa .nsa-btn.nsa-busy::before { animation-duration: 2.4s; } }
 @media (max-width: 640px) { .nsa-form-card .nsa-row, .nsa-choices-2 { grid-template-columns: 1fr; } .nsa-form-card { padding: 18px; } }
 
 /* TigerLink restyles checkboxes and radios (hides the real input), so force them visible and clickable */
@@ -627,11 +643,11 @@ var NSA_API = "https://script.google.com/macros/s/AKfycbzANbV6hxqy5CSTPI3P6TtrhS
       if (missing) return error('Please fill in: ' + missing.label + '.');
       if (Date.now() - started - 2500 < 0) return error('Please take a moment to check your answers, then press the button again.');
       msg.style.display = 'none';
-      btn.disabled = true;
       var label = btn.textContent;
-      btn.textContent = 'Sending...';
+      busy(btn, 'Sending...');
       onSubmit(data, function (err) {
         btn.disabled = false;
+        btn.className = btn.className.replace(' nsa-busy', '');
         btn.textContent = label;
         if (err) error(err);
       });
@@ -656,6 +672,26 @@ var NSA_API = "https://script.google.com/macros/s/AKfycbzANbV6hxqy5CSTPI3P6TtrhS
 
   function link(href, text, cls) { return el('a', { href: href, cls: cls || 'nsa-btn nsa-btn-outline', text: text }); }
   function first(name) { return String(name || '').split(' ')[0]; }
+
+  // Spinner box shown while the form service answers (it can take a few seconds to wake up)
+  function loader(text) {
+    return el('div', { cls: 'nsa-loading', role: 'status' }, [el('span', { cls: 'nsa-spinner', 'aria-hidden': 'true' }), el('span', { text: text })]);
+  }
+  // Grey placeholder cards in the shape of a listing, so the board doesn't look empty while it loads
+  function skeletons(n) {
+    var out = [loader('Loading listings...')];
+    for (var i = 0; i !== n; i++) {
+      out.push(el('div', { cls: 'nsa-skel-card', 'aria-hidden': 'true' }, ['nsa-skel-tag', 'nsa-skel-title', '', 'nsa-skel-short', '', 'nsa-skel-btn']
+        .map(function (c) { return el('span', { cls: 'nsa-skel ' + c }); })));
+    }
+    return out;
+  }
+  // Disable a button and show a small spinner in it until the answer comes back
+  function busy(btn, text) {
+    btn.disabled = true;
+    btn.className += ' nsa-busy';
+    btn.textContent = text;
+  }
 
   // ---------- Join the mailing list ----------
   function joinForm(slot) {
@@ -700,8 +736,7 @@ var NSA_API = "https://script.google.com/macros/s/AKfycbzANbV6hxqy5CSTPI3P6TtrhS
           ['We found ' + res.email + ' on the NSA mailing list. Confirm and we will remove it straight away.'], [yes, no]);
         no.addEventListener('click', function () { removeForm(slot); });
         yes.addEventListener('click', function () {
-          yes.disabled = true;
-          yes.textContent = 'Removing...';
+          busy(yes, 'Removing...');
           api('unsub_confirm', { token: res.token }, function (r2) {
             if (!r2.ok) return result(slot, 'info', 'Please try again', [r2.error], [link('', 'Start over')]);
             result(slot, 'ok', "You've been removed",
@@ -773,7 +808,7 @@ var NSA_API = "https://script.google.com/macros/s/AKfycbzANbV6hxqy5CSTPI3P6TtrhS
     if (key) return manage(slot, key);
     slot.textContent = '';
     var filters = el('div', { cls: 'nsa-filter' });
-    var board = el('div', { cls: 'nsa-listings' }, [el('p', { cls: 'nsa-muted', text: 'Loading listings...' })]);
+    var board = el('div', { cls: 'nsa-listings', 'aria-busy': 'true' }, skeletons(3));
     var postHead = el('div', { cls: 'nsa-post-head' }, [el('h2', { text: 'Post a listing' })]);
     var postSlot = el('div', { id: 'nsa-room-post' });
     slot.appendChild(filters);
@@ -826,8 +861,7 @@ var NSA_API = "https://script.google.com/macros/s/AKfycbzANbV6hxqy5CSTPI3P6TtrhS
         el('div', { cls: 'nsa-listing-foot' }, [el('span', { cls: 'nsa-muted nsa-small', text: 'Posted ' + l.posted }), btn])
       ]);
       btn.addEventListener('click', function () {
-        btn.disabled = true;
-        btn.textContent = 'Loading...';
+        busy(btn, 'Loading...');
         api('room_contact', { id: l.id }, function (res) {
           var box = el('div', { cls: 'nsa-contact-reveal' });
           if (!res.ok) box.textContent = res.error;
@@ -848,6 +882,7 @@ var NSA_API = "https://script.google.com/macros/s/AKfycbzANbV6hxqy5CSTPI3P6TtrhS
     }
 
     api('room_list', {}, function (res) {
+      board.removeAttribute('aria-busy');
       if (!res.ok) { board.textContent = ''; board.appendChild(el('div', { cls: 'nsa-empty' }, [el('p', { text: res.error })])); return; }
       all = res.listings || [];
       render();
@@ -888,7 +923,8 @@ var NSA_API = "https://script.google.com/macros/s/AKfycbzANbV6hxqy5CSTPI3P6TtrhS
   }
 
   function manage(slot, key) {
-    slot.textContent = 'Loading your listing...';
+    slot.textContent = '';
+    slot.appendChild(loader('Loading your listing...'));
     api('room_manage', { key: key }, function (res) {
       if (!res.ok) return result(slot, 'info', 'Listing not found', [res.error], [link(location.pathname, 'Back to the board')]);
       var status = res.status === 'live' ? 'Live, showing until ' + res.until + '.' : (res.status === 'removed' ? 'Taken down.' : 'Expired. Renew it if you are still looking.');
@@ -899,7 +935,7 @@ var NSA_API = "https://script.google.com/macros/s/AKfycbzANbV6hxqy5CSTPI3P6TtrhS
         'Status: ' + status
       ], res.status === 'removed' ? [renew] : [renew, remove]);
       function act(op, btn) {
-        btn.disabled = true;
+        busy(btn, op === 'renew' ? 'Renewing...' : 'Taking it down...');
         api('room_update', { key: key, op: op }, function (r2) {
           if (!r2.ok) return result(slot, 'info', 'Please try again', [r2.error]);
           result(slot, 'ok', op === 'renew' ? 'Renewed!' : 'Your listing has been taken down',
